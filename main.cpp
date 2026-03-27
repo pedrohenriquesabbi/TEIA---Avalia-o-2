@@ -1,14 +1,18 @@
 #include <iostream>
 #include <vector>
+#include <cmath>
+#include <cstdlib>
+#include <windows.h>
+#include <conio.h> // Essencial para capturar as setas (_getch)
 #include "core/puzzle_state.h"
 
-// Stub para a Busca Tabu (para o código compilar enquanto o colega não termina)
+extern PuzzleState generateRandomInitial(int shuffles);
+extern int calculateManhattan(const PuzzleState& s);
+
 std::vector<PuzzleState> solveWithTabu(PuzzleState initial) {
-    std::cout << "\n[Aviso] Busca Tabu ainda não implementada pelo membro do grupo.\n";
     return {initial};
 }
 
-// Função para imprimir o tabuleiro no terminal (ajuda no teste sem OpenGL)
 void printBoard(const PuzzleState& s) {
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -17,38 +21,56 @@ void printBoard(const PuzzleState& s) {
         }
         std::cout << "\n";
     }
-    std::cout << "Cost (Manhattan): " << s.cost << "\n-----------\n";
+    std::cout << "Custo: " << s.cost << "\n-----------\n";
 }
 
 int main() {
-    // 1. Gerar estado inicial aleatório (conforme requisito e.3) [cite: 23]
-    // Importante: use a função do utils.cpp que criamos
-    extern PuzzleState generateRandomInitial(int shuffles); 
-    PuzzleState inicio = generateRandomInitial(30); 
+    PuzzleState inicio = generateRandomInitial(50); 
+    inicio.cost = calculateManhattan(inicio); 
 
-    std::cout << "--- ESTADO INICIAL GENERADO ---\n";
+    std::cout << "--- ESTADO INICIAL GERADO ---\n";
     printBoard(inicio);
 
-    // 2. Executar o SEU algoritmo (Annealing) [cite: 13, 16]
     std::cout << "Executando Simulated Annealing...\n";
     std::vector<PuzzleState> caminho = solveWithAnnealing(inicio);
 
-    // 3. Mostrar progresso no terminal
-    if (caminho.back().cost == 0) {
-        std::cout << "SUCESSO! Objetivo alcancado em " << caminho.size() << " estados.\n";
-        
-        char op;
-        std::cout << "Deseja ver o passo a passo no terminal? (s/n): ";
-        std::cin >> op;
-        
-        if (op == 's' || op == 'S') {
-            for (const auto& estado : caminho) {
-                printBoard(estado);
+    if (!caminho.empty()) {
+        if (caminho.back().cost == 0) {
+            std::cout << "\nSOLUCAO ENCONTRADA COM " << caminho.size() << " ESTADOS.\n";
+        } else {
+            std::cout << "\nSOLUCAO NAO ENCONTRADA. FORAM FEITOS " << caminho.size() << " ESTADOS.\n";
+        }
+
+        std::cout << "\nCONTROLES:\n";
+        std::cout << "[->] Avancar | [<-] Voltar | [ESC] Sair\n";
+        std::cout << "Pressione qualquer tecla para iniciar...";
+        _getch();
+
+        int indice = 0;
+        bool sair = false;
+
+        while (!sair) {
+            system("cls");
+            std::cout << "Estado: " << indice + 1 << " / " << caminho.size() << "\n";
+            std::cout << "Use as setas para navegar. [ESC] para fechar.\n";
+            printBoard(caminho[indice]);
+
+            // Captura a tecla
+            int tecla = _getch();
+
+            if (tecla == 27) { // ESC
+                sair = true;
+            } 
+            else if (tecla == 0 || tecla == 224) { // Teclas especiais (setas)
+                tecla = _getch(); // Pega o código real da seta
+                if (tecla == 77) { // Seta para DIREITA
+                    if (indice < (int)caminho.size() - 1) indice++;
+                } 
+                else if (tecla == 75) { // Seta para ESQUERDA
+                    if (indice > 0) indice--;
+                }
             }
         }
-    } else {
-        std::cout << "O algoritmo parou sem encontrar a solucao perfeita (T chegou ao minimo).\n";
-        std::cout << "Ultimo custo alcancado: " << caminho.back().cost << "\n";
     }
 
     return 0;
