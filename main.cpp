@@ -3,7 +3,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <windows.h>
-#include <conio.h> // Essencial para capturar as setas (_getch)
+#include <conio.h>
 #include "core/puzzle_state.h"
 
 extern PuzzleState generateRandomInitial(int shuffles);
@@ -14,6 +14,7 @@ std::vector<PuzzleState> solveWithTabu(PuzzleState initial) {
 }
 
 void printBoard(const PuzzleState& s) {
+    std::cout << "\n";
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             if (s.board[i][j] == 0) std::cout << "  ";
@@ -21,56 +22,60 @@ void printBoard(const PuzzleState& s) {
         }
         std::cout << "\n";
     }
-    std::cout << "Custo: " << s.cost << "\n-----------\n";
+    std::cout << "\nCusto: " << s.cost << "\n-----------\n";
 }
 
 int main() {
-    PuzzleState inicio = generateRandomInitial(50); 
-    inicio.cost = calculateManhattan(inicio); 
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
 
+    PuzzleState start = generateRandomInitial(50); 
+    start.cost = calculateManhattan(start); 
+
+    system("cls");
     std::cout << "--- ESTADO INICIAL GERADO ---\n";
-    printBoard(inicio);
+    printBoard(start);
 
-    std::cout << "Executando Simulated Annealing...\n";
-    std::vector<PuzzleState> caminho = solveWithAnnealing(inicio);
+    std::cout << "\nExecutando Simulated Annealing...\n";
+    std::vector<PuzzleState> path = solveWithAnnealing(start);
 
-    if (!caminho.empty()) {
-        if (caminho.back().cost == 0) {
-            std::cout << "\nSOLUCAO ENCONTRADA COM " << caminho.size() << " ESTADOS.\n";
+    if (!path.empty()) {
+        if (path.back().cost == 0) {
+            std::cout << "\nSOLUÇÃO ENCONTRADA COM " << path.size() << " ESTADOS.\n";
         } else {
-            std::cout << "\nSOLUCAO NAO ENCONTRADA. FORAM FEITOS " << caminho.size() << " ESTADOS.\n";
+            std::cout << "\nSOLUÇÃO NÃO ENCONTRADA. FORAM FEITOS " << path.size() << " ESTADOS.\n";
         }
 
         std::cout << "\nCONTROLES:\n";
-        std::cout << "[->] Avancar | [<-] Voltar | [ESC] Sair\n";
-        std::cout << "Pressione qualquer tecla para iniciar...";
+        std::cout << "\n[->] AvanÇar | [<-] Voltar | [ESC] Sair\n";
+        std::cout << "\nPressione qualquer tecla para iniciar...";
         _getch();
 
-        int indice = 0;
-        bool sair = false;
+        int index = 0;
+        bool exit = false;
 
-        while (!sair) {
+        do {
             system("cls");
-            std::cout << "Estado: " << indice + 1 << " / " << caminho.size() << "\n";
-            std::cout << "Use as setas para navegar. [ESC] para fechar.\n";
-            printBoard(caminho[indice]);
+            std::cout << "Estado: " << index + 1 << " / " << path.size() << "\n";
+            std::cout << "\nUse as setas para navegar. [ESC] para fechar.\n";
+            printBoard(path[index]);
 
-            // Captura a tecla
-            int tecla = _getch();
+            int key = _getch();
 
-            if (tecla == 27) { // ESC
-                sair = true;
+            if (key == 27) { // Tecla ESC
+                exit = true;
             } 
-            else if (tecla == 0 || tecla == 224) { // Teclas especiais (setas)
-                tecla = _getch(); // Pega o código real da seta
-                if (tecla == 77) { // Seta para DIREITA
-                    if (indice < (int)caminho.size() - 1) indice++;
+            else if (key == 0 || key == 224) {
+                key = _getch();
+                if (key == 77) { // Seta direita
+                    if (index < (int)path.size() - 1) index++;
                 } 
-                else if (tecla == 75) { // Seta para ESQUERDA
-                    if (indice > 0) indice--;
+                else if (key == 75) { // Seta esquerda
+                    if (index > 0) index--;
                 }
             }
-        }
+            system("cls");
+        } while (!exit);
     }
 
     return 0;

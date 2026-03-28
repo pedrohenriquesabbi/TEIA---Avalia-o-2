@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <ctime>
 
-// Heurística de Manhattan [cite: 15]
+// Heurística de Manhattan
 int calculateManhattan(const PuzzleState& s) {
     int distance = 0;
     for (int i = 0; i < 3; i++) {
@@ -20,7 +20,7 @@ int calculateManhattan(const PuzzleState& s) {
     return distance;
 }
 
-// Gera vizinho movendo o espaço vazio [cite: 22]
+// Gera vizinho movendo o espaço vazio
 PuzzleState getNeighbor(PuzzleState current) {
     int dr[] = {-1, 1, 0, 0};
     int dc[] = {0, 0, -1, 1};
@@ -40,31 +40,30 @@ PuzzleState getNeighbor(PuzzleState current) {
 
 std::vector<PuzzleState> solveWithAnnealing(PuzzleState initial) {
     std::vector<PuzzleState> path;
-    PuzzleState atual = initial; // Linha 2 do pseudocódigo
-    atual.cost = calculateManhattan(atual);
-    path.push_back(atual);
+    PuzzleState current = initial;
+    current.cost = calculateManhattan(current);
+    path.push_back(current);
 
-    double T = 1.0;             // Temperatura inicial (T)
-    double T_min = 0.0001;      // Critério de parada (T = 0)
-    double alpha = 0.98;        // Fator de resfriamento (valor que diminui T)
+    double T = 1.0;
+    double T_min = 0.01;
+    double alpha = 0.999;
 
     srand(time(NULL));
 
-    while (T > T_min && atual.cost > 0) {
-        // EQUILÍBRIO TÉRMICO: Tenta 100 vezes na mesma T para ser mais estável
+    while (T > T_min && current.cost > 0) {
         for (int i = 0; i < 100; i++) {
-            if (atual.cost == 0) break;
+            if (current.cost == 0) break;
 
-            PuzzleState proximo = getNeighbor(atual); // Linha 7
-            int deltaE = proximo.cost - atual.cost; // Linha 8
+            PuzzleState next = getNeighbor(current);
+            int deltaE = next.cost - current.cost;
 
             // Aceitação baseada em custo ou probabilidade
             if (deltaE < 0 || ((double)rand() / RAND_MAX) < exp(-deltaE / T)) {
-                atual = proximo;
-                path.push_back(atual);
+                current = next;
+                path.push_back(current);
             }
         }
-        T *= alpha; // Esfria T conforme t aumenta
+        T *= alpha;
     }
-    return path; // Retorna a sequência S
+    return path;
 }
