@@ -2,81 +2,112 @@
 #include <vector>
 #include <cmath>
 #include <cstdlib>
+#include <ctime>
 #include <windows.h>
-#include <conio.h>
+
+#include <GLFW/glfw3.h>
+
 #include "core/puzzle_state.h"
+#include "algorithms/annealing.h"
+#include "render/renderer.h"
 
 extern PuzzleState generateRandomInitial(int shuffles);
 extern int calculateManhattan(const PuzzleState& s);
 
-std::vector<PuzzleState> solveWithTabu(PuzzleState initial) {
-    return {initial};
-}
+// ---------- CONTROLE ----------
+int indexState = 0;
 
-void printBoard(const PuzzleState& s) {
-    std::cout << "\n";
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            if (s.board[i][j] == 0) std::cout << "  ";
-            else std::cout << s.board[i][j] << " ";
+// ---------- INPUT (TECLADO) ----------
+void processInput(GLFWwindow* window, int pathSize) {
+    static bool leftPressed = false;
+    static bool rightPressed = false;
+
+    // → Avançar
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        if (!rightPressed && indexState < pathSize - 1) {
+            indexState++;
         }
-        std::cout << "\n";
+        rightPressed = true;
+    } else {
+        rightPressed = false;
     }
-    std::cout << "\nCusto: " << s.cost << "\n-----------\n";
+
+    // ← Voltar
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        if (!leftPressed && indexState > 0) {
+            indexState--;
+        }
+        leftPressed = true;
+    } else {
+        leftPressed = false;
+    }
+
+    // ESC sair
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, true);
+    }
 }
 
 int main() {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
 
-    PuzzleState start = generateRandomInitial(50); 
-    start.cost = calculateManhattan(start); 
-
-    system("cls");
-    std::cout << "--- ESTADO INICIAL GERADO ---\n";
-    printBoard(start);
+    // =========================
+    // ESTADO INICIAL
+    // =========================
+    srand(time(NULL));
+    PuzzleState start = generateRandomInitial(50);
+    start.cost = calculateManhattan(start);
 
     std::cout << "\nExecutando Simulated Annealing...\n";
     std::vector<PuzzleState> path = solveWithAnnealing(start);
 
-    if (!path.empty()) {
-        if (path.back().cost == 0) {
-            std::cout << "\nSOLUÇÃO ENCONTRADA COM " << path.size() << " ESTADOS.\n";
-        } else {
-            std::cout << "\nSOLUÇÃO NÃO ENCONTRADA. FORAM FEITOS " << path.size() << " ESTADOS.\n";
-        }
-
-        std::cout << "\nCONTROLES:\n";
-        std::cout << "\n[->] AvanÇar | [<-] Voltar | [ESC] Sair\n";
-        std::cout << "\nPressione qualquer tecla para iniciar...";
-        _getch();
-
-        int index = 0;
-        bool exit = false;
-
-        do {
-            system("cls");
-            std::cout << "Estado: " << index + 1 << " / " << path.size() << "\n";
-            std::cout << "\nUse as setas para navegar. [ESC] para fechar.\n";
-            printBoard(path[index]);
-
-            int key = _getch();
-
-            if (key == 27) { // Tecla ESC
-                exit = true;
-            } 
-            else if (key == 0 || key == 224) {
-                key = _getch();
-                if (key == 77) { // Seta direita
-                    if (index < (int)path.size() - 1) index++;
-                } 
-                else if (key == 75) { // Seta esquerda
-                    if (index > 0) index--;
-                }
-            }
-            system("cls");
-        } while (!exit);
+    if (path.empty()) {
+        std::cout << "Nenhum caminho gerado.\n";
+        return 0;
     }
+
+    // =========================
+    // GLFW INIT
+    // =========================
+    if (!glfwInit()) {
+        std::cout << "Erro ao iniciar GLFW\n";
+        return -1;
+    }
+
+    GLFWwindow* window = glfwCreateWindow(600, 600, "8-Puzzle", NULL, NULL);
+    if (!window) {
+        std::cout << "Erro ao criar janela\n";
+        glfwTerminate();
+        return -1;
+    }
+
+    glfwMakeContextCurrent(window);
+
+    // =========================
+    // LOOP PRINCIPAL
+    // =========================
+    while (!glfwWindowShouldClose(window)) {
+
+        // INPUT
+        processInput(window, path.size());
+
+        // RENDER
+        glClear(GL_COLOR_BUFFER_BIT);
+        renderState(path[indexState]);
+
+        // INFO NO CONSOLE (simples e funciona muito bem)
+        system("cls");
+        std::cout << "Estado: " << indexState + 1 << " / " << path.size() << "\n";
+        std::cout << "Custo: " << path[indexState].cost << "\n";
+        std::cout << "[<-] Voltar | [->] Avancar | [ESC] Sair\n";
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
 
     return 0;
 }
