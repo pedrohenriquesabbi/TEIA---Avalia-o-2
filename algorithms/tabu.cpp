@@ -46,7 +46,7 @@ std::vector<PuzzleState> solveWithTabu(PuzzleState initial) {
 
             std::string hash = stateHash(n); // você precisa implementar
 
-            // 🔴 se está na tabu list, ignora
+            // se está na tabu list, ignora
             if (tabuSet.count(hash))
                 continue;
 

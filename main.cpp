@@ -113,9 +113,9 @@ int main()
     // =========================
     // RESULTADOS
     // =========================
-    std::cout << "\n===== COMPARACAO FINAL =====\n";
+    std::cout << "\n===== COMPARAÇÃO FINAL =====\n";
     std::cout << "Tabu - passos: " << tabuPath.size() << "\n";
-    std::cout << "Annealing - passos: " << annealingPath.size() << "\n";
+    std::cout << "Simulated Annealing - passos: " << annealingPath.size() << "\n";
 
     // =========================
     // GLFW INIT

@@ -7,7 +7,6 @@
 // Função para criar o estado objetivo (Goal State)
 PuzzleState getGoalState() {
     PuzzleState goal;
-    // CORREÇÃO: memset agora dentro da função para limpar o lixo de memória
     memset(&goal, 0, sizeof(PuzzleState)); 
 
     int val = 1;

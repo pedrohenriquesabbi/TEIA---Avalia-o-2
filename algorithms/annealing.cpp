@@ -14,7 +14,7 @@ std::vector<PuzzleState> solveWithAnnealing(PuzzleState initial) {
 
     double T = 1.0;
     double T_min = 0.01;
-    double alpha = 0.999;
+    double alpha = 0.99;
 
     while (T > T_min && current.cost > 0) {
         for (int i = 0; i < 100; i++) {
