@@ -2,66 +2,8 @@
 #include "renderer.h"
 #include <vector>
 #include <cstdlib>
+
 static const float NUM_SCALE = 0.8f;
-
-// -------------------- CONFETE --------------------
-struct Particle
-{
-    float x, y;
-    float vx, vy;
-    float r, g, b;
-};
-
-std::vector<Particle> particles;
-bool showConfetti = false;
-
-// CRIAR CONFETE
-void spawnConfetti()
-{
-    particles.clear();
-
-    for (int i = 0; i < 150; i++)
-    {
-        Particle p;
-
-        p.x = ((rand() % 200) / 100.0f) - 1.0f;
-        p.y = 1.0f;
-
-        p.vx = ((rand() % 100) / 5000.0f) - 0.01f;
-        p.vy = -((rand() % 100) / 2000.0f);
-
-        // cores mais bonitas
-        p.r = (rand() % 100) / 100.0f;
-        p.g = (rand() % 100) / 100.0f;
-        p.b = (rand() % 100) / 100.0f;
-
-        particles.push_back(p);
-    }
-}
-
-// ATUALIZAR + DESENHAR
-void updateAndDrawConfetti()
-{
-    float size = 0.015f;
-
-    glBegin(GL_QUADS);
-    for (auto &p : particles)
-    {
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // gravidade
-        p.vy -= 0.0005f;
-
-        glColor3f(p.r, p.g, p.b);
-
-        glVertex2f(p.x, p.y);
-        glVertex2f(p.x + size, p.y);
-        glVertex2f(p.x + size, p.y - size);
-        glVertex2f(p.x, p.y - size);
-    }
-    glEnd();
-}
 
 // -------------------- NÚMEROS --------------------
 
@@ -175,30 +117,14 @@ void drawNumber(float x, float y, int value, float scale)
 
     switch (value)
     {
-    case 1:
-        drawOne(0, 0);
-        break;
-    case 2:
-        drawTwo(0, 0);
-        break;
-    case 3:
-        drawThree(0, 0);
-        break;
-    case 4:
-        drawFour(0, 0);
-        break;
-    case 5:
-        drawFive(0, 0);
-        break;
-    case 6:
-        drawSix(0, 0);
-        break;
-    case 7:
-        drawSeven(0, 0);
-        break;
-    case 8:
-        drawEight(0, 0);
-        break;
+    case 1: drawOne(0, 0); break;
+    case 2: drawTwo(0, 0); break;
+    case 3: drawThree(0, 0); break;
+    case 4: drawFour(0, 0); break;
+    case 5: drawFive(0, 0); break;
+    case 6: drawSix(0, 0); break;
+    case 7: drawSeven(0, 0); break;
+    case 8: drawEight(0, 0); break;
     }
 
     glPopMatrix();
@@ -232,14 +158,9 @@ void renderState(const PuzzleState &state)
     glLineWidth(6.0f);
 
     float boardSize = 1.6f;
-
-    // Espaçamento pequeno
     float spacing = 0.02f;
-
-    // Calcula tamanho do tile automaticamente
     float tileSize = (boardSize - 2 * spacing) / 3.0f;
 
-    // Centraliza o tabuleiro
     float startX = -boardSize / 2.0f;
     float startY = boardSize / 2.0f;
 
@@ -247,7 +168,6 @@ void renderState(const PuzzleState &state)
     {
         for (int j = 0; j < 3; j++)
         {
-
             int value = state.board[i][j];
 
             float x = startX + j * (tileSize + spacing);
@@ -273,25 +193,6 @@ void renderState(const PuzzleState &state)
                 drawNumber(centerX, centerY, value, tileSize * 2.5f);
             }
         }
-    }
-
-    // ATIVAR CONFETE
-    if (state.cost == 0 && !showConfetti)
-    {
-        showConfetti = true;
-        spawnConfetti();
-    }
-
-    // reset se voltar estados
-    if (state.cost != 0)
-    {
-        showConfetti = false;
-    }
-
-    // DESENHAR CONFETE
-    if (showConfetti)
-    {
-        updateAndDrawConfetti();
     }
 
     glFlush();

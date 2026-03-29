@@ -1,6 +1,5 @@
 #include <iostream>
 #include <vector>
-#include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <windows.h>
@@ -9,104 +8,182 @@
 
 #include "core/puzzle_state.h"
 #include "algorithms/annealing.h"
+#include "algorithms/tabu.h"
 #include "render/renderer.h"
 
 extern PuzzleState generateRandomInitial(int shuffles);
-extern int calculateManhattan(const PuzzleState& s);
+extern int calculateManhattan(const PuzzleState &s);
 
-// ---------- CONTROLE ----------
-int indexState = 0;
+// =========================
+// CONTROLES INDEPENDENTES
+// =========================
+int indexTabu = 0;
+int indexAnnealing = 0;
 
-// ---------- INPUT (TECLADO) ----------
-void processInput(GLFWwindow* window, int pathSize) {
+// =========================
+// INPUT TABU
+// =========================
+void processInputTabu(GLFWwindow *window, int maxSize)
+{
     static bool leftPressed = false;
     static bool rightPressed = false;
 
-    // → Avançar
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-        if (!rightPressed && indexState < pathSize - 1) {
-            indexState++;
-        }
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+    {
+        if (!rightPressed && indexTabu < maxSize - 1)
+            indexTabu++;
         rightPressed = true;
-    } else {
+    }
+    else
         rightPressed = false;
-    }
 
-    // ← Voltar
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-        if (!leftPressed && indexState > 0) {
-            indexState--;
-        }
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+    {
+        if (!leftPressed && indexTabu > 0)
+            indexTabu--;
         leftPressed = true;
-    } else {
+    }
+    else
         leftPressed = false;
-    }
 
-    // ESC sair
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-    }
 }
 
-int main() {
+// =========================
+// INPUT ANNEALING
+// =========================
+void processInputAnnealing(GLFWwindow *window, int maxSize)
+{
+    static bool leftPressed = false;
+    static bool rightPressed = false;
+
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+    {
+        if (!rightPressed && indexAnnealing < maxSize - 1)
+            indexAnnealing++;
+        rightPressed = true;
+    }
+    else
+        rightPressed = false;
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+    {
+        if (!leftPressed && indexAnnealing > 0)
+            indexAnnealing--;
+        leftPressed = true;
+    }
+    else
+        leftPressed = false;
+
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+}
+
+// =========================
+// MAIN
+// =========================
+int main()
+{
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
+
+    srand(time(NULL));
 
     // =========================
     // ESTADO INICIAL
     // =========================
-    srand(time(NULL));
     PuzzleState start = generateRandomInitial(50);
     start.cost = calculateManhattan(start);
 
-    std::cout << "\nExecutando Simulated Annealing...\n";
-    std::vector<PuzzleState> path = solveWithAnnealing(start);
+    // =========================
+    // RODAR ALGORITMOS
+    // =========================
+    std::cout << "Rodando algoritmos...\n";
 
-    if (path.empty()) {
-        std::cout << "Nenhum caminho gerado.\n";
+    std::vector<PuzzleState> tabuPath = solveWithTabu(start);
+    std::vector<PuzzleState> annealingPath = solveWithAnnealing(start);
+
+    if (tabuPath.empty() || annealingPath.empty())
+    {
+        std::cout << "Erro: caminho vazio.\n";
         return 0;
     }
 
     // =========================
+    // RESULTADOS
+    // =========================
+    std::cout << "\n===== COMPARACAO FINAL =====\n";
+    std::cout << "Tabu - passos: " << tabuPath.size() << "\n";
+    std::cout << "Annealing - passos: " << annealingPath.size() << "\n";
+
+    // =========================
     // GLFW INIT
     // =========================
-    if (!glfwInit()) {
-        std::cout << "Erro ao iniciar GLFW\n";
+    if (!glfwInit())
+    {
+        std::cout << "Erro GLFW\n";
         return -1;
     }
 
-    GLFWwindow* window = glfwCreateWindow(600, 600, "8-Puzzle", NULL, NULL);
-    if (!window) {
-        std::cout << "Erro ao criar janela\n";
+    GLFWwindow *windowTabu = glfwCreateWindow(500, 500, "TABU SEARCH", NULL, NULL);
+    GLFWwindow *windowAnnealing = glfwCreateWindow(500, 500, "ANNEALING", NULL, windowTabu);
+
+    if (!windowTabu || !windowAnnealing)
+    {
+        std::cout << "Erro ao criar janelas\n";
         glfwTerminate();
         return -1;
     }
 
-    glfwMakeContextCurrent(window);
+    std::cout << "\n===== CUSTOS =====\n";
 
     // =========================
-    // LOOP PRINCIPAL
+    // LOOP
     // =========================
-    while (!glfwWindowShouldClose(window)) {
-
-        // INPUT
-        processInput(window, path.size());
-
-        // RENDER
-        glClear(GL_COLOR_BUFFER_BIT);
-        renderState(path[indexState]);
-
-        // INFO NO CONSOLE (simples e funciona muito bem)
-        system("cls");
-        std::cout << "Estado: " << indexState + 1 << " / " << path.size() << "\n";
-        std::cout << "Custo: " << path[indexState].cost << "\n";
-        std::cout << "[<-] Voltar | [->] Avancar | [ESC] Sair\n";
-
-        glfwSwapBuffers(window);
+    while (!glfwWindowShouldClose(windowTabu) &&
+           !glfwWindowShouldClose(windowAnnealing))
+    {
         glfwPollEvents();
+
+        // =====================
+        // TABU WINDOW
+        // =====================
+        glfwMakeContextCurrent(windowTabu);
+        processInputTabu(windowTabu, tabuPath.size());
+
+        glClear(GL_COLOR_BUFFER_BIT);
+        renderState(tabuPath[indexTabu]);
+        static int lastTabu = -1;
+
+        if (lastTabu != indexTabu)
+        {
+            std::cout << "Custo Tabu: " << tabuPath[indexTabu].cost << std::endl;
+            lastTabu = indexTabu;
+        }
+        glfwSwapBuffers(windowTabu);
+
+        // =====================
+        // ANNEALING WINDOW
+        // =====================
+        glfwMakeContextCurrent(windowAnnealing);
+        processInputAnnealing(windowAnnealing, annealingPath.size());
+
+        glClear(GL_COLOR_BUFFER_BIT);
+        renderState(annealingPath[indexAnnealing]);
+
+        static int lastAnnealing = -1;
+
+        if (lastAnnealing != indexAnnealing)
+        {
+            std::cout << "Custo Annealing: " << annealingPath[indexAnnealing].cost << std::endl;
+            lastAnnealing = indexAnnealing;
+        }
+        glfwSwapBuffers(windowAnnealing);
     }
 
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(windowTabu);
+    glfwDestroyWindow(windowAnnealing);
     glfwTerminate();
 
     return 0;
