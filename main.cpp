@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <windows.h>
+#include <chrono>
 
 #include <GLFW/glfw3.h>
 
@@ -101,8 +102,29 @@ int main()
     // =========================
     std::cout << "Rodando algoritmos...\n";
 
+    // =========================
+    // MEDIR TABU
+    // =========================
+    auto startTabuTime = std::chrono::high_resolution_clock::now();
+
     std::vector<PuzzleState> tabuPath = solveWithTabu(start);
+
+    auto endTabuTime = std::chrono::high_resolution_clock::now();
+
+    auto tabuDuration = std::chrono::duration_cast<std::chrono::microseconds>(
+        endTabuTime - startTabuTime);
+
+    // =========================
+    // MEDIR ANNEALING
+    // =========================
+    auto startAnnealingTime = std::chrono::high_resolution_clock::now();
+
     std::vector<PuzzleState> annealingPath = solveWithAnnealing(start);
+
+    auto endAnnealingTime = std::chrono::high_resolution_clock::now();
+
+    auto annealingDuration = std::chrono::duration_cast<std::chrono::microseconds>(
+        endAnnealingTime - startAnnealingTime);
 
     if (tabuPath.empty() || annealingPath.empty())
     {
@@ -113,9 +135,12 @@ int main()
     // =========================
     // RESULTADOS
     // =========================
-    std::cout << "\n===== COMPARACAO FINAL =====\n";
+    std::cout << "\n========= COMPARACAO FINAL =========\n";
     std::cout << "Tabu - passos: " << tabuPath.size() << "\n";
     std::cout << "Annealing - passos: " << annealingPath.size() << "\n";
+
+    std::cout << "Tabu - tempo: " << tabuDuration.count() << " us\n";
+    std::cout << "Annealing - tempo: " << annealingDuration.count() << " us\n";
 
     // =========================
     // GLFW INIT
@@ -136,7 +161,7 @@ int main()
         return -1;
     }
 
-    std::cout << "\n===== CUSTOS =====\n";
+    std::cout << "\n========= CUSTOS ATUAIS =========\n";
 
     // =========================
     // LOOP
@@ -176,7 +201,7 @@ int main()
 
         if (lastAnnealing != indexAnnealing)
         {
-            std::cout << "Custo Annealing: " << annealingPath[indexAnnealing].cost << std::endl;
+            std::cout << "                  Custo Annealing: " << annealingPath[indexAnnealing].cost << std::endl;
             lastAnnealing = indexAnnealing;
         }
         glfwSwapBuffers(windowAnnealing);

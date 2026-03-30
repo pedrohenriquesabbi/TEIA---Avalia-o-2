@@ -1,37 +1,37 @@
 #include <vector>
 #include "../core/puzzle_state.h"
 #include "../core/utils.h"
-#include <string>
-#include <set>
-#include <queue>
+#include <climits>
 
-std::string stateHash(const PuzzleState &s) {
-    std::string h;
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            h += std::to_string(s.board[i][j]) + ",";
-        }
+int TABU_SIZE = 50;
+int MAX_ITERS = 10000;
+
+// verifica se está na tabu list
+bool isTabu(const PuzzleState &s, const std::vector<PuzzleState> &tabuList)
+{
+    for (const auto &t : tabuList)
+    {
+        if (t == s)
+            return true;
     }
-    return h;
+    return false;
 }
 
-std::vector<PuzzleState> solveWithTabu(PuzzleState initial) {
+// tabu search
+std::vector<PuzzleState> solveWithTabu(PuzzleState initial)
+{
     std::vector<PuzzleState> path;
+    std::vector<PuzzleState> tabuList;
 
     PuzzleState current = initial;
     current.cost = calculateManhattan(current);
 
     PuzzleState best = current;
 
-    std::set<std::string> tabuSet;
-    std::queue<std::string> tabuQueue;
-
-    int TABU_SIZE = 50;
-    int MAX_ITERS = 10000;
-
     path.push_back(current);
 
-    for (int iter = 0; iter < MAX_ITERS; iter++) {
+    for (int iter = 0; iter < MAX_ITERS; iter++)
+    {
 
         if (current.cost == 0)
             break;
@@ -42,25 +42,26 @@ std::vector<PuzzleState> solveWithTabu(PuzzleState initial) {
         bool found = false;
         int bestCost = INT_MAX;
 
-        for (auto &n : neighbors) {
-
-            std::string hash = stateHash(n); // você precisa implementar
-
-            // 🔴 se está na tabu list, ignora
-            if (tabuSet.count(hash))
-                continue;
+        for (auto &n : neighbors)
+        {
 
             n.cost = calculateManhattan(n);
 
-            if (!found || n.cost < bestCost) {
+            // tabu + aspiration
+            if (isTabu(n, tabuList) && n.cost >= best.cost)
+                continue;
+
+            if (!found || n.cost < bestCost)
+            {
                 bestNeighbor = n;
                 bestCost = n.cost;
                 found = true;
             }
         }
 
-        // se tudo tabu, relaxa regra (aspiration criteria simples)
-        if (!found) {
+        // aspiration simples (se tudo tabu)
+        if (!found)
+        {
             bestNeighbor = neighbors[0];
             bestNeighbor.cost = calculateManhattan(bestNeighbor);
         }
@@ -73,14 +74,11 @@ std::vector<PuzzleState> solveWithTabu(PuzzleState initial) {
             best = current;
 
         // adiciona na tabu list
-        std::string h = stateHash(current);
+        tabuList.push_back(current);
 
-        tabuSet.insert(h);
-        tabuQueue.push(h);
-
-        if (tabuQueue.size() > TABU_SIZE) {
-            tabuSet.erase(tabuQueue.front());
-            tabuQueue.pop();
+        if (tabuList.size() > TABU_SIZE)
+        {
+            tabuList.erase(tabuList.begin()); // remove o mais antigo
         }
     }
 

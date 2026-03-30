@@ -5,6 +5,73 @@
 
 static const float NUM_SCALE = 0.8f;
 
+// -------------------- CONFETES -------------------
+
+struct Confetti
+{
+    float x, y;
+    float vx, vy;
+    float r, g, b;
+};
+
+std::vector<Confetti> confettiParticles;
+bool confettiActive = false;
+
+void spawnConfetti(int amount = 150)
+{
+    confettiParticles.clear();
+
+    for (int i = 0; i < amount; i++)
+    {
+        Confetti c;
+
+        c.x = ((rand() % 100) / 50.0f) - 1.0f; // -1 a 1
+        c.y = 1.0f;                            // topo da tela
+
+        c.vx = ((rand() % 100) / 5000.0f) - 0.01f;
+        c.vy = -((rand() % 100) / 2000.0f + 0.01f);
+
+        c.r = (rand() % 100) / 100.0f;
+        c.g = (rand() % 100) / 100.0f;
+        c.b = (rand() % 100) / 100.0f;
+
+        confettiParticles.push_back(c);
+    }
+
+    confettiActive = true;
+}
+
+void updateConfetti()
+{
+    for (auto &c : confettiParticles)
+    {
+        c.x += c.vx;
+        c.y += c.vy;
+
+        // gravidade leve
+        c.vy -= 0.0005f;
+
+        // reset quando sai da tela
+        if (c.y < -1.2f)
+        {
+            c.y = 1.0f;
+        }
+    }
+}
+
+void drawConfetti()
+{
+    glPointSize(4.0f);
+
+    glBegin(GL_POINTS);
+    for (auto &c : confettiParticles)
+    {
+        glColor3f(c.r, c.g, c.b);
+        glVertex2f(c.x, c.y);
+    }
+    glEnd();
+}
+
 // -------------------- NÚMEROS --------------------
 
 void drawOne(float x, float y)
@@ -117,14 +184,30 @@ void drawNumber(float x, float y, int value, float scale)
 
     switch (value)
     {
-    case 1: drawOne(0, 0); break;
-    case 2: drawTwo(0, 0); break;
-    case 3: drawThree(0, 0); break;
-    case 4: drawFour(0, 0); break;
-    case 5: drawFive(0, 0); break;
-    case 6: drawSix(0, 0); break;
-    case 7: drawSeven(0, 0); break;
-    case 8: drawEight(0, 0); break;
+    case 1:
+        drawOne(0, 0);
+        break;
+    case 2:
+        drawTwo(0, 0);
+        break;
+    case 3:
+        drawThree(0, 0);
+        break;
+    case 4:
+        drawFour(0, 0);
+        break;
+    case 5:
+        drawFive(0, 0);
+        break;
+    case 6:
+        drawSix(0, 0);
+        break;
+    case 7:
+        drawSeven(0, 0);
+        break;
+    case 8:
+        drawEight(0, 0);
+        break;
     }
 
     glPopMatrix();
@@ -193,6 +276,27 @@ void renderState(const PuzzleState &state)
                 drawNumber(centerX, centerY, value, tileSize * 2.5f);
             }
         }
+    }
+
+    // ativar confetti
+    if (state.cost == 0 && !confettiActive)
+    {
+        confettiActive = true;
+        spawnConfetti();
+        confettiActive = false;
+    }
+
+    // reset se voltar estados
+    if (state.cost == 0 && !confettiActive)
+    {
+        spawnConfetti();
+    }
+
+    // desenhar confetti
+    if (confettiActive)
+    {
+        updateConfetti();
+        drawConfetti();
     }
 
     glFlush();
